@@ -14,12 +14,12 @@
       "config" : {
         "author_name" : "eons",
         "author_email" : "support@eons.llc",
-        "description" : "eons Basic Build System",
-        "package_url" : "https://github.com/eons-dev/bin_ebbs",
+        "description" : "eons Package Infrastructure Controller",
+        "package_url" : "https://github.com/eons-dev/bin_epic",
         "license" : "MIT License",
         "python_min" : "3.7",
         "classifiers" : [
-          "Development Status :: 4 - Beta"
+          "Development Status :: 3 - Alpha"
         ]
       }
     }

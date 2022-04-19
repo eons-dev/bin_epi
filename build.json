@@ -14,8 +14,8 @@
       "config" : {
         "author_name" : "eons",
         "author_email" : "support@eons.llc",
-        "description" : "eons Package Infrastructure Controller",
-        "package_url" : "https://github.com/eons-dev/bin_epic",
+        "description" : "eons Package Installer",
+        "package_url" : "https://github.com/eons-dev/bin_epi",
         "license" : "MIT License",
         "python_min" : "3.7",
         "classifiers" : [

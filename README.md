@@ -1,16 +1,16 @@
-# eons Package Infrastructure Controller
+# eons Package Installer
 
-![build](https://github.com/eons-dev/bin_epic/actions/workflows/python-package.yml/badge.svg)
+![build](https://github.com/eons-dev/bin_epi/actions/workflows/python-package.yml/badge.svg)
 
-EPIC (or epic) is a package manager that uses the eons python library. The default repository is https://infrastructure.tech.
+EPI (or epi) is a package manager that uses the eons python library. The default repository is https://infrastructure.tech.
 
 
 ## Installation
-`pip install epic`
+`pip install epi`
 
 ## Usage
 
-Epic should behave as expected: you can `install`, `update` and `remove` packages. Each package must have a valid install.json. Installation is platform agnostic, to a degree. Each package is responsible for maintaining its own cross-platform viability.
+Epi should behave as expected: you can `install`, `update` and `remove` packages. Each package must have a valid install.json. Installation is platform agnostic, to a degree. Each package is responsible for maintaining its own cross-platform viability.
 
 ### Repository
 

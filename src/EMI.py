@@ -3,10 +3,10 @@ import logging
 import eons as e
 from .Exceptions import *
 
-class EPI(e.Executor):
+class EMI(e.Executor):
 
     def __init__(this):
-        super().__init__(name="eons Package Installer", descriptionStr="A package manager for eons and infrastructure technologies.")
+        super().__init__(name="eons Module Installer", descriptionStr="A package manager for eons and infrastructure technologies.")
 
         this.RegisterDirectory("epic")
 

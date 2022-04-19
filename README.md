@@ -1,16 +1,16 @@
-# eons Package Installer
+# eons Module Installer
 
-![build](https://github.com/eons-dev/bin_epi/actions/workflows/python-package.yml/badge.svg)
+![build](https://github.com/eons-dev/bin_emi/actions/workflows/python-package.yml/badge.svg)
 
-EPI (or epi) is a package manager that uses the eons python library. The default repository is https://infrastructure.tech.
+EMI (or emi) is a package manager that uses the eons python library. The default repository is https://infrastructure.tech.
 
 
 ## Installation
-`pip install epi`
+`pip install emi`
 
 ## Usage
 
-Epi should behave as expected: you can `install`, `update` and `remove` packages. Each package must have a valid install.json. Installation is platform agnostic, to a degree. Each package is responsible for maintaining its own cross-platform viability.
+Emi should behave as expected: you can `install`, `update` and `remove` packages. Each package must have a valid install.json. Installation is platform agnostic, to a degree. Each package is responsible for maintaining its own cross-platform viability.
 
 ### Repository
 

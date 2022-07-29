@@ -1,0 +1,49 @@
+import eons as e
+import os
+import logging
+import platform
+import shutil
+import jsonpickle
+import sqlalchemy as sql
+from pathlib import Path
+from eot import EOT
+from .Exceptions import *
+
+#CatalogCards are classes which will be stored in the catalog.db
+SQLBase = sql.orm.declarative_base()
+
+#The Epitome class is an object used for tracking the location, status, and other metadata of a Tome package.
+#epi = above, so metadata of a tome would be above a tome, would be epitome. Note that the "tome" portion of epitome actually derives from the word for "to cut". Epitome roughly means an abridgement or surface incision. Abridgement is appropriate here.
+#Epitomes should not be extended when creating packages. They are only to be used by Merx for tracking existing packages.
+class Epitome(SQLBase):
+    __tablename__ = 'tomes'
+    id = sql.Column(sql.Integer, primary_key=True)
+    name = sql.Column(sql.String)
+    version = sql.Column(sql.String) #not all versions follow Semantic Versioning.
+    installed_at = sql.Column(sql.String) #semicolon-separated list of file paths.
+    retrieved_from = sql.Column(sql.String) #repo url
+    retrieved_on = sql.Column(sql.Float) #startdate (per eot).
+    additional_notes = sql.Column(sql.String) #TODO: Let's convert this to PickleType and store any user-defined values.
+
+    def __repr__(this):
+        return f"<Epitome(id={this.id}, name={this.name}, version={this.version}, installed_at={this.installed_at}, retrieved_from={this.retrieved_from}, retrieved_on={this.retrieved_on}, additional_notes={this.additional_notes})>"
+
+
+#Transaction logs are recorded whether or not the associated Merx.Transaction() completed.
+class TransactionLog(SQLBase):
+    __tablename__ = 'transactions'
+    id = sql.Column(sql.Integer, primary_key=True)
+    when = sql.Column(sql.Float)  #startdate (per eot).
+    merx = sql.Column(sql.String) #name of merx
+    tomes = sql.Column(sql.String) #semicolon-separated list of tome arguments
+    result = sql.Column(sql.Boolean) #return value of Merx.DidTransactionSucceed()
+
+    def __init__(this, merx, tomes):
+        this.when = EOT.GetStardate()
+        this.merx = merx
+        this.tomes = tomes
+
+#This is here just to ensure all SQLBase children are created before *this is called.
+#TODO: Can we move this into EMI?
+def ConstructCatalog(engine):
+    SQLBase.metadata.create_all(engine)

@@ -1,20 +1,22 @@
 {
+  "name" : "emi",
+  "type" : "bin",
   "clear_build_path" : true,
-  "ebbs_next": [
+  "build_in" : "github",
+  "next": [
     {
       "build" : "py",
-      "build_in" : "generated",
       "copy" : [
-        {"../src/" : "src/"},
-        {"../inc/" : "inc/"},
-        {"../test/" : "test/"},
-        {"../README.md" : "README.md"},
-        {"../LICENSE" : "LICENSE"}
+        {"../../src/" : "src/"},
+        {"../../inc/" : "inc/"},
+        {"../../test/" : "test/"},
+        {"../../README.md" : "README.md"},
+        {"../../LICENSE" : "LICENSE"}
       ],
       "config" : {
         "author_name" : "eons",
         "author_email" : "support@eons.llc",
-        "description" : "eons Module Installer",
+        "description" : "eons Modular Installer",
         "package_url" : "https://github.com/eons-dev/bin_emi",
         "license" : "MIT License",
         "python_min" : "3.7",

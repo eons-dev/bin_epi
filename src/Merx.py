@@ -24,9 +24,9 @@ class Merx(e.UserFunctor):
         # For optional args, supply the arg name as well as a default value.
         this.optionalKWArgs = {}
 
-        #args will be provided by EMI.
-        this.args = None
-
+        # Ease of use members
+        this.transactionSucceeded = False
+        this.rollbackSucceeded = False
 
     # Do stuff!
     # Override this or die.
@@ -37,7 +37,7 @@ class Merx(e.UserFunctor):
     # RETURN whether or not the Transaction was successful.
     # Override this to perform whatever success checks are necessary.
     def DidTransactionSucceed(this):
-        return False
+        return this.transactionSucceeded
 
 
     # Undo any changes made by Transaction.
@@ -49,7 +49,7 @@ class Merx(e.UserFunctor):
     # RETURN whether or not the Transaction was successful.
     # Override this to perform whatever success checks are necessary.
     def DidRollbackSucceed(this):
-        return False
+        return this.rollbackSucceeded
 
 
     # Hook for any pre-transaction configuration
@@ -175,7 +175,7 @@ class Merx(e.UserFunctor):
 
     # Override of eons.Functor method. See that class for details
     def UserFunction(this, **kwargs):
-        logging.info(f"Initiating Transaction {this.name} for {this.args}")
+        logging.info(f"Initiating Transaction {this.name} for {this.tomes}")
 
         this.PreTransaction()
 

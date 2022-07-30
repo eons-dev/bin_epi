@@ -5,12 +5,13 @@ import platform
 import shutil
 import jsonpickle
 import sqlalchemy as sql
+import sqlalchemy.orm as orm
 from pathlib import Path
 from eot import EOT
 from .Exceptions import *
 
 #CatalogCards are classes which will be stored in the catalog.db
-SQLBase = sql.orm.declarative_base()
+SQLBase = orm.declarative_base()
 
 #The Epitome class is an object used for tracking the location, status, and other metadata of a Tome package.
 #epi = above, so metadata of a tome would be above a tome, would be epitome. Note that the "tome" portion of epitome actually derives from the word for "to cut". Epitome roughly means an abridgement or surface incision. Abridgement is appropriate here.
@@ -22,11 +23,17 @@ class Epitome(SQLBase):
     version = sql.Column(sql.String) #not all versions follow Semantic Versioning.
     installed_at = sql.Column(sql.String) #semicolon-separated list of file paths.
     retrieved_from = sql.Column(sql.String) #repo url
-    retrieved_on = sql.Column(sql.Float) #startdate (per eot).
+    first_retrieved_on = sql.Column(sql.Float) #startdate (per eot).
+    last_retrieved_on = sql.Column(sql.Float) #startdate (per eot).
     additional_notes = sql.Column(sql.String) #TODO: Let's convert this to PickleType and store any user-defined values.
+
+    path = None
 
     def __repr__(this):
         return f"<Epitome(id={this.id}, name={this.name}, version={this.version}, installed_at={this.installed_at}, retrieved_from={this.retrieved_from}, retrieved_on={this.retrieved_on}, additional_notes={this.additional_notes})>"
+
+    def __init__(this, name=None):
+        this.name = name
 
 
 #Transaction logs are recorded whether or not the associated Merx.Transaction() completed.
@@ -36,7 +43,7 @@ class TransactionLog(SQLBase):
     when = sql.Column(sql.Float)  #startdate (per eot).
     merx = sql.Column(sql.String) #name of merx
     tomes = sql.Column(sql.String) #semicolon-separated list of tome arguments
-    result = sql.Column(sql.Boolean) #return value of Merx.DidTransactionSucceed()
+    result = sql.Column(sql.Integer) #return value of Merx.DidTransactionSucceed()
 
     def __init__(this, merx, tomes):
         this.when = EOT.GetStardate()

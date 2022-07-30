@@ -1,10 +1,13 @@
 import os
 import logging
+import traceback
 import eons as e
 import sqlalchemy as sql
+import sqlalchemy.orm as orm
 from pathlib import Path
+from eot import EOT
 from .Exceptions import *
-from .Epitome import *
+from .CatalogCards import *
 
 class PathSelector:
     def __init__(this, name, systemPath):
@@ -15,11 +18,16 @@ class PathSelector:
 class EMI(e.Executor):
 
     def __init__(this):
-        super().__init__(name="eons Module Installer", descriptionStr="A package manager for eons and infrastructure technologies.")
 
-        #The library is where all Tomes are initially distributed from (i.e. the repo_store)
+        # The library is where all Tomes are initially distributed from (i.e. the repo_store)
         #   and where records for all Tome locations and Merx Transactions are kept.
+        # We need to create these files for there to be a valid config.json to read from. Otherwise, eons.Executor crashes.
         this.library = Path.home().joinpath(".eons")
+        this.sqlEngine = sql.create_engine(f"sqlite:///{str(this.library.joinpath('catalog.db'))}")
+        this.catalog = orm.sessionmaker(bind=this.sqlEngine)() #sqlalchemy: sessionmaker()->Session()->session.
+        this.SetupHome()
+
+        super().__init__(name="eons Modular Installer", descriptionStr="A universal package manager.")
 
         #Windows paths must be set in the config.json.
         this.paths = [
@@ -28,12 +36,33 @@ class EMI(e.Executor):
             PathSelector("lib", "/usr/local/lib/")
         ]
 
-        this.sqlEngine = sql.create_engine(f"sqlite:///{str(this.library.joinpath('index.db'))}")
-        this.sqlSession = sql.orm.sessionmaker(bind=this.sqlEngine)
+    #Create initial resources if they don't already exist.
+    def SetupHome(this):
+        if (not this.library.exists()):
+            logging.info(f"Creating home folder: {str(this.library)}")
+            this.library.mkdir()
+            this.library.joinpath("tmp").mkdir()
+
+        catalogFile = this.library.joinpath("catalog.db")
+        if (not catalogFile.exists()):
+            logging.info(f"Creating catalog: {str(catalogFile)}")
+            catalogFile.touch()
+        if (not catalogFile.stat().st_size):
+            logging.info("Constructing catalog scheme")
+            ConstructCatalog(this.sqlEngine)
+
+        configFile = this.library.joinpath("config.json")
+        if (not configFile.exists() or not configFile.stat().st_size):
+            logging.info(f"Initializing config file: {str(configFile)}")
+            config = open(configFile, "w+")
+            config.write("{\n}")
+
 
     #Override of eons.Executor method. See that class for details
     def Configure(this):
-        this.defaultRepoDirectory = str(this.library.joinpath("tmp"))
+        super().Configure()
+        this.tomeDirectory = this.library.joinpath("tmp")
+        this.defaultRepoDirectory = str(this.library.joinpath("merx"))
         this.defualtConfigFile = str(this.library.joinpath("config.json"))
 
     #Override of eons.Executor method. See that class for details
@@ -43,8 +72,8 @@ class EMI(e.Executor):
     #Override of eons.Executor method. See that class for details
     def AddArgs(this):
         super().AddArgs()
-        this.argparser.add_argument('merx', type = str, nargs=1, metavar = 'install or remove', help = 'what to do', dest = 'merx')
-        this.argparser.add_argument('tomes', type = str, nargs='*', metavar = 'package_name', help = 'how to do it', dest = 'tomes')
+        this.argparser.add_argument('merx', type=str, metavar='merx', help='what to do (e.g. \'install\' or \'remove\')')
+        this.argparser.add_argument('tomes', type=str, nargs='*', metavar='tome', help='how to do it (e.g. \'my_package\')')
 
     #Override of eons.Executor method. See that class for details
     def ParseArgs(this):
@@ -53,12 +82,6 @@ class EMI(e.Executor):
 
     #Override of eons.Executor method. See that class for details
     def UserFunction(this, **kwargs):
-        if (not this.library.exists()):
-            this.library.mkdir()
-            this.library.joinpath("tmp").mkdir()
-            this.library.joinpath("config.json").touch()
-            this.library.joinpath("index.db").touch()
-            ConstructCatalog(this.sqlEngine)
 
         super().UserFunction(**kwargs)
         
@@ -71,19 +94,25 @@ class EMI(e.Executor):
         transaction = TransactionLog(this.args.merx, '; '.join(this.args.tomes))
         try:
             merx = this.GetRegistered(this.args.merx, "merx")
-            if (merx(tomes=this.args.tomes, paths=paths, catalog=this.sqlSession)):
-                transaction.result = True
+            merx(executor=this, tomes=this.args.tomes, paths=paths, catalog=this.catalog)
+            if (merx.DidTransactionSucceed()):
+                transaction.result = 0
                 logging.info(f"Complete.")
             else:
+                logging.warning(f"Transaction failed. Attempting Rollback...")
                 merx.Rollback()
-                transaction.result = False
-                logging.error(f"Transaction failed!")
-        except Exception as e:
+                if (merx.DidRollbackSucceed()):
+                    transaction.result = 1
+                    logging.info(f"Rollback succeeded. All is well.")
+                else:
+                    transaction.result = 2
+                    logging.error(f"Rollback FAILED! SYSTEM STATE UNKNOWN!!!")
+        except Exception as error:
             transaction.result = False
-            logging.error("ERROR!")
-            pass
-        this.sqlSession.add(transaction)
-        this.sqlSession.commit() #make sure the transaction log gets committed.
+            logging.error(f"ERROR: {error}")
+            traceback.print_exc()
+        this.catalog.add(transaction)
+        this.catalog.commit() #make sure the transaction log gets committed.
 
         #TODO: develop TransactionLog retention policy (i.e. trim records after 1 year, 1 day, or don't record at all).
 
@@ -95,5 +124,48 @@ class EMI(e.Executor):
             else:
                 path.selectedPath = this.library.joinpath(path.name)
                 logging.debug(f"The preferred path for {path.name} ({str(preferredPath)}) was unusable.")
-                path.path.mkdir(exist_ok=True)
+                path.selectedPath.mkdir(exist_ok=True)
             logging.debug(f"Path for {path.name} set to {str(path.selectedPath)}.")
+
+    # GetRegistered modified for use with Tomes.
+    # tomeName should be given without the "tome_" prefix
+    # RETURNS an Epitome containing the given Tome's Path and details or None.
+    def GetTome(this, tomeName):
+        logging.debug(f"Fetching tome_{tomeName}.")
+
+        tomePath = this.tomeDirectory.joinpath(f"tome_{tomeName}")
+        logging.debug(f"Will place {tomeName} in {tomePath}.")
+
+        epitome = this.catalog.query(Epitome).filter(Epitome.name==tomeName).first()
+        if (epitome is None):
+            epitome = Epitome(tomeName)
+        else:
+            logging.debug(f"Got exiting Epitome for {tomeName}.")
+
+        if (tomePath.exists()):
+            logging.debug(f"Found {tomeName} on the local filesystem.")
+            epitome.path = tomePath
+        else:
+            preservedRepo = this.repo['store']
+            preservedUrl = this.repo['url']
+            if (epitome.retrieved_from is not None and len(epitome.retrieved_from)):
+                this.repo['url'] = epitome.retrieved_from
+            this.repo['store'] = str(this.tomeDirectory)
+            logging.debug(f"Attempting to download {tomeName} from {this.repo['url']}")
+            this.DownloadPackage(packageName=f"tome_{tomeName}", registerClasses=False, createSubDirectory=True)
+            if (tomePath.exists()):
+                epitome.path = tomePath
+                epitome.retrieved_from = this.repo['url']
+                if (epitome.first_retrieved_on is None or epitome.first_retrieved_on == 0):
+                    epitome.first_retrieved_on = EOT.GetStardate()
+                epitome.last_retrieved_on = EOT.GetStardate()
+                if (epitome.version is None):
+                    epitome.version = ""
+                    # TODO: populate epitome.version. Blocked by https://github.com/infrastructure-tech/srv_infrastructure/issues/2
+            else:
+                logging.error(f"Failed to download tome_{tomeName}")
+
+            this.repo['url'] = preservedUrl
+            this.repo['store'] = preservedRepo
+
+        return epitome

@@ -61,6 +61,15 @@ All other data, including the config file and database are stored in `~/.eons/`.
 
 **WINDOWS USERS**: You must set all `..._paths` in your config.json or rely only on local user installations (i.e. in the `~/.eons/` folder). Automatic support for system path discovery on Windows may be added in a future release.
 
+#### Merx
+
+All merx are placed in `~/.eons/merx`. These are saved indefinitely.
+You can also create your own merx in that directory, and they will be automatically usable by emi. The `~/.eons/merx` directory is the `eons.Executor.repo['store']`, i.e. where the self-registering functors for emi (the merx) are kept.
+
+#### Tomes
+
+Tomes are downloaded to `~/.eons/tmp`. Currently, these are saved indefinitely but that will be changed in a future release. The idea is that a merx should move the contents of the tome to the appropriate location in the filesystem and record that location in the database (see below).
+
 ### Configuration
 
 Emi uses the default config file `~/.eons/config.json`. While this can be overridden, it is much preferred to leave it as is.
@@ -72,6 +81,34 @@ This configuration file is used for all `eons.Executor.Fetch()` calls, which mea
 Emi uses a [SQLite](https://www.sqlite.org/index.html) database to keep track of all merx transaction and the locations of all tomes. 
 
 This database is stored in `~/.eons/catalog.db`.
+
+All columns which can have multiple entries will be semicolon delimited.
+
+#### Tomes
+
+A record of all tomes is kept in the `tomes` table:  
+Name | Data Type | Not NULL |
+:--- | :-------- | :------: |
+id | INTEGER | true |
+name | VARCHAR | false |
+version | VARCHAR | false |
+installed_at | VARCHAR | false |
+retrieved_from | VARCHAR | false |
+first_retrieved_on | FLOAT | false |
+last_retrieved_on | FLOAT | false |
+additional_notes | VARCHAR | false |
+
+#### Transactions
+
+Everytime emi is invoked, it will record the Transaction it executes.
+These data are storde in the `transactions` table:  
+Name | Data Type | Not NULL |
+:--- | :-------- | :------: |
+id | INTEGER | true |
+when | FLOAT | false |
+merx | VARCHAR | false |
+tomes | VARCHAR | false |
+result | INTEGER | false |
 
 ### Repository
 

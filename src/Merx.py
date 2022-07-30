@@ -1,5 +1,6 @@
 import os
 import logging
+import traceback
 import platform
 import shutil
 import jsonpickle
@@ -17,8 +18,8 @@ class Merx(e.UserFunctor):
         this.requiredKWArgs = [
             "tomes", #emi cli arguments 2 and beyond
             "paths", #where to put things, as determined by EMI
-            "catalog" #EMI sqlSession (sqlalchemy)
         ]
+        #executor and catalog are treated specially; see ValidateArgs(), below, for details.
 
         # For optional args, supply the arg name as well as a default value.
         this.optionalKWArgs = {}
@@ -32,15 +33,23 @@ class Merx(e.UserFunctor):
     def Transaction(this):
         pass
 
+
+    # RETURN whether or not the Transaction was successful.
+    # Override this to perform whatever success checks are necessary.
+    def DidTransactionSucceed(this):
+        return False
+
+
     # Undo any changes made by Transaction.
     # Please override this too!
     def Rollback(this):
         this.catalog.rollback() #removes all records created by *this (see: https://docs.sqlalchemy.org/en/14/orm/tutorial.html#rolling-back).
 
+
     # RETURN whether or not the Transaction was successful.
     # Override this to perform whatever success checks are necessary.
-    def DidTransactionSucceed(this):
-        return True
+    def DidRollbackSucceed(this):
+        return False
 
 
     # Hook for any pre-transaction configuration
@@ -123,7 +132,7 @@ class Merx(e.UserFunctor):
         ret = this.executor.Fetch(varName, default, enableThisExecutor, False, enableExecutorConfig, enableEnvironment)
 
         if (enableThisMerx and hasattr(this, varName)):
-            logging.debug("...got {varName} from self ({this.name}).")
+            logging.debug(f"...got {varName} from self ({this.name}).")
             return getattr(this, varName)
 
         return ret
@@ -132,6 +141,8 @@ class Merx(e.UserFunctor):
     # Override of eons.UserFunctor method. See that class for details.
     def ValidateArgs(this, **kwargs):
         # logging.debug(f"Got arguments: {kwargs}")
+        setattr(this, 'executor', kwargs['executor'])
+        setattr(this, 'catalog', kwargs['catalog'])
 
         for rkw in this.requiredKWArgs:
             if (hasattr(this, rkw)):
@@ -139,6 +150,7 @@ class Merx(e.UserFunctor):
 
             if (rkw in kwargs):
                 this.Set(rkw, kwargs[rkw])
+                continue
 
             fetched = this.Fetch(rkw)
             if (fetched is not None):
@@ -156,6 +168,7 @@ class Merx(e.UserFunctor):
 
             if (okw in kwargs):
                 this.Set(okw, kwargs[okw])
+                continue
 
             this.Set(okw, this.Fetch(okw, default=default))
 
@@ -177,6 +190,12 @@ class Merx(e.UserFunctor):
         else:
             logging.error("Transaction did not succeed :(")
 
+
+    # Open or download a Tome.
+    # tomeName should be given without the "tome_" prefix
+    # RETURNS an Epitome containing the given Tome's Path and details or None.
+    def GetTome(this, tomeName):
+        return this.executor.GetTome(tomeName)
 
     # RETURNS: an opened file object for writing.
     # Creates the path if it does not exist.

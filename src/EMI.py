@@ -130,7 +130,7 @@ class EMI(e.Executor):
     # GetRegistered modified for use with Tomes.
     # tomeName should be given without the "tome_" prefix
     # RETURNS an Epitome containing the given Tome's Path and details or None.
-    def GetTome(this, tomeName):
+    def GetTome(this, tomeName, download=True):
         logging.debug(f"Fetching tome_{tomeName}.")
 
         tomePath = this.tomeDirectory.joinpath(f"tome_{tomeName}")
@@ -139,13 +139,15 @@ class EMI(e.Executor):
         epitome = this.catalog.query(Epitome).filter(Epitome.name==tomeName).first()
         if (epitome is None):
             epitome = Epitome(tomeName)
+            if (not download):
+                logging.warning(f"Epitome for {tomeName} did not exist and will not be downloaded.")
         else:
             logging.debug(f"Got exiting Epitome for {tomeName}.")
 
         if (tomePath.exists()):
             logging.debug(f"Found {tomeName} on the local filesystem.")
             epitome.path = tomePath
-        else:
+        elif (download):
             preservedRepo = this.repo['store']
             preservedUrl = this.repo['url']
             if (epitome.retrieved_from is not None and len(epitome.retrieved_from)):
@@ -167,5 +169,7 @@ class EMI(e.Executor):
 
             this.repo['url'] = preservedUrl
             this.repo['store'] = preservedRepo
+        else:
+            logging.warning(f"Could not find {tomeName}; only basic info will be available.")
 
         return epitome

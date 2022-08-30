@@ -1,6 +1,5 @@
 import os
 import logging
-import traceback
 import eons as e
 import sqlalchemy as sql
 import sqlalchemy.orm as orm
@@ -92,25 +91,9 @@ class EMI(e.Executor):
             paths[path.name] = path.selectedPath
 
         transaction = TransactionLog(this.args.merx, '; '.join(this.args.tomes))
-        try:
-            merx = this.GetRegistered(this.args.merx, "merx")
-            merx(executor=this, tomes=this.args.tomes, paths=paths, catalog=this.catalog)
-            if (merx.DidTransactionSucceed()):
-                transaction.result = 0
-                logging.info(f"Complete.")
-            else:
-                logging.warning(f"Transaction failed. Attempting Rollback...")
-                merx.Rollback()
-                if (merx.DidRollbackSucceed()):
-                    transaction.result = 1
-                    logging.info(f"Rollback succeeded. All is well.")
-                else:
-                    transaction.result = 2
-                    logging.error(f"Rollback FAILED! SYSTEM STATE UNKNOWN!!!")
-        except Exception as error:
-            transaction.result = False
-            logging.error(f"ERROR: {error}")
-            traceback.print_exc()
+        merx = this.GetRegistered(this.args.merx, "merx")
+        merx(executor=this, tomes=this.args.tomes, paths=paths, catalog=this.catalog)
+        transaction.result = merx.result
         this.catalog.add(transaction)
         this.catalog.commit() #make sure the transaction log gets committed.
 

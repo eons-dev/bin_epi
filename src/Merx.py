@@ -66,13 +66,13 @@ class Merx(e.UserFunctor):
 
     # Grab any known and necessary args from kwargs before any Fetch calls are made.
     # Override of eons.UserFunctor method.
-    def ParseInitialArgs(this, **kwargs):
-        super().ParseInitialArgs(**kwargs)
-        setattr(this, 'catalog', kwargs['catalog'])
+    def ParseInitialArgs(this):
+        super().ParseInitialArgs()
+        setattr(this, 'catalog', this.kwargs['catalog'])
 
 
     # Override of eons.Functor method. See that class for details
-    def UserFunction(this, **kwargs):
+    def UserFunction(this):
         logging.info(f"Initiating Transaction {this.name} for {this.tomes}")
 
         this.PreTransaction()

@@ -1,7 +1,5 @@
 # eons Modular Installer
 
-![build](https://github.com/eons-dev/bin_emi/actions/workflows/python-package.yml/badge.svg)
-
 Use the eons modular installer (EMI) to configure systems.
 
 EMI is a package manager that uses the [eons python library](https://github.com/eons-dev/lib_eons) by executing arbitrary "actions" which are provided by the repository (per eons).  

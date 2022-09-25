@@ -2,13 +2,13 @@ import os
 import logging
 import shutil
 from pathlib import Path
-import eons as e
+import eons
 from .CatalogCards import *
 
 #Merx are actions: things like "install", "update", "remove", etc.
 #These should be stored on the online repo as merx_{merx.name}, e.g. merx_install, etc.
-class Merx(e.UserFunctor):
-    def __init__(this, name=e.INVALID_NAME()):
+class Merx(eons.UserFunctor):
+    def __init__(this, name=eons.INVALID_NAME()):
         super().__init__(name)
 
         this.requiredKWArgs = [

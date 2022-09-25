@@ -1,6 +1,6 @@
 import os
 import logging
-import eons as e
+import eons
 import sqlalchemy as sql
 import sqlalchemy.orm as orm
 from pathlib import Path
@@ -14,7 +14,7 @@ class PathSelector:
         this.systemPath = systemPath
         this.selectedPath = None
 
-class EMI(e.Executor):
+class EMI(eons.Executor):
 
     def __init__(this):
 

@@ -1,4 +1,4 @@
-import eons as e
+import eons
 import os
 import logging
 import platform

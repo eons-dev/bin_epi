@@ -1,5 +1,7 @@
+import eons
+
 # All Merx errors
-class MerxError(Exception): pass
+class MerxError(Exception, metaclass=eons.ActualType): pass
 
 # Exception used for miscellaneous Merx errors.
-class OtherMerxError(MerxError): pass
+class OtherMerxError(MerxError, metaclass=eons.ActualType): pass

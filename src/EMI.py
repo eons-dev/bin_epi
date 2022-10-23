@@ -26,7 +26,7 @@ class EMI(eons.Executor):
         this.catalog = orm.sessionmaker(bind=this.sqlEngine)() #sqlalchemy: sessionmaker()->Session()->session.
         this.SetupHome()
 
-        super().__init__(name="eons Modular Installer", descriptionStr="A universal package manager.")
+        super().__init__(name="eons Modular Interface", descriptionStr="A universal state manager.")
 
         #Windows paths must be set in the config.json.
         this.paths = [
@@ -80,9 +80,9 @@ class EMI(eons.Executor):
         #NOTE: THERE SHOULD BE NO this.extraArgs
 
     #Override of eons.Executor method. See that class for details
-    def UserFunction(this, **kwargs):
+    def Function(this):
 
-        super().UserFunction(**kwargs)
+        super().Function()
         
         #paths will be provided to the Merx as a dictionary.
         this.SelectPaths()
@@ -90,9 +90,9 @@ class EMI(eons.Executor):
         for path in this.paths:
             paths[path.name] = path.selectedPath
 
-        transaction = TransactionLog(this.args.merx, '; '.join(this.args.tomes))
-        merx = this.GetRegistered(this.args.merx, "merx")
-        merx(executor=this, tomes=this.args.tomes, paths=paths, catalog=this.catalog)
+        transaction = TransactionLog(this.parsedArgs.merx, '; '.join(this.parsedArgs.tomes))
+        merx = this.GetRegistered(this.parsedArgs.merx, "merx")
+        merx(executor=this, tomes=this.parsedArgs.tomes, paths=paths, catalog=this.catalog)
         transaction.result = merx.result
         this.catalog.add(transaction)
         this.catalog.commit() #make sure the transaction log gets committed.

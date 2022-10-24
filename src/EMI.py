@@ -65,7 +65,7 @@ class EMI(eons.Executor):
 		super().Configure()
 		this.tomeDirectory = this.library.joinpath("tmp")
 		this.defaultRepoDirectory = str(this.library.joinpath("merx"))
-		this.defualtConfigFile = str(this.library.joinpath("config.json"))
+		this.defaultConfigFile = str(this.library.joinpath("config.json"))
 		this.defaultPrefix = "merx"
 
 	# Override of eons.Executor method. See that class for details
@@ -107,7 +107,7 @@ class EMI(eons.Executor):
 			logging.debug(f"Path for {path.name} set to {str(path.selectedPath)}.")
 			
 	def Execute(this, merx, *args, **kwargs):
-		transaction = TransactionLog(merxName, '; '.join(this.parsedArgs.tomes))
+		transaction = TransactionLog(merx, '; '.join(this.parsedArgs.tomes))
 		transaction.result = super().Execute(merx, *args, tomes=this.parsedArgs.tomes, paths=this.selectedPaths, catalog=this.catalog, **kwargs)
 		this.catalog.add(transaction)
 		

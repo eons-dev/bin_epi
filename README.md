@@ -47,9 +47,11 @@ Merx, as a noun, rather than the typical verb (the same as "installation" vs "in
 
 Emi accepts no additional arguments. Everything beyond the Merx (first arg) is made available to the Merx. It is up to this Merx to decide what to do with the information it is given (usually multiple args past the 2nd equate to multiple packages to install, remove, etc. but that is only convention and in now way required).
 
-This behavior is different from EBBS and the Eons `Fetch()` mechanics. 
+This behavior is different from EBBS and the Eons `Fetch()` mechanics. Instead of being able to supply configuration values at the command line (e.g. --my-var "my value"), all Fetched values must be in the config or environment.
 
-Because of the treatment of arguments, it is preferred to have many different Merx than to have a single Merx with many options. For example, `apt install -y` in proper emi style would be rewritten as `apt auto-install` or something similar.
+Because of this treatment of arguments, it is preferred to have many different Merx than to have a single Merx with many options. For example, `apt install -y` in proper emi style would be rewritten as `apt auto-install` or something similar.
+
+It is also possible to execute several Merx in sequence by separating them with a '/'. For example, we could have `emi install` and `emi auto/install`. This relies on the Eons sequence mechanics to enable `auto` to change the behavior of `install`. You can pass both members (variables) and methods (functions) this way; thus, your Merx can be as modular as your heart desires!
 
 ### Directories
 
@@ -104,7 +106,7 @@ Name | Data Type | Not NULL |
 :--- | :-------- | :------: |
 id | INTEGER | true |
 when | FLOAT | false |
-Merx | VARCHAR | false |
+merx | VARCHAR | false |
 tomes | VARCHAR | false |
 result | INTEGER | false |
 
@@ -118,7 +120,7 @@ Online repository settings can be specified with:
 --repo-password
 ```
 
-Keep in mind that `emi --repo-store ... merx tomes` on the command line is equivalent to having `"repo_store": "..."` in the config.json.  
+Keep in mind that `emi --repo-store ... merx1/merx2 tomes` on the command line is equivalent to having `"repo_store": "..."` in the ~/.eons/config.json and calling `emi merx1/merx2 tomes`.
 Please don't store your credentials in the config.
 
 NOTE: you do not need to supply any repo settings to download packages from the public repository.

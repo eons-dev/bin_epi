@@ -30,7 +30,7 @@ class EMI(eons.Executor):
 
 		# Windows paths must be set in the config.json.
 		this.paths = [
-			PathSelector("bin", "/usr/local/bin/"),
+			PathSelector("exe", "/usr/local/bin/"),
 			PathSelector("inc", "/usr/local/include/"),
 			PathSelector("lib", "/usr/local/lib/")
 		]
@@ -66,7 +66,7 @@ class EMI(eons.Executor):
 		this.tomeDirectory = this.library.joinpath("tmp")
 		this.defaultRepoDirectory = str(this.library.joinpath("merx"))
 		this.defaultConfigFile = str(this.library.joinpath("config.json"))
-		this.defaultPrefix = "merx"
+		this.defaultPackageType = "merx"
 
 	# Override of eons.Executor method. See that class for details
 	def RegisterAllClasses(this):
@@ -116,12 +116,12 @@ class EMI(eons.Executor):
 		this.catalog.commit()
 
 	# GetRegistered modified for use with Tomes.
-	# tomeName should be given without the "tome_" prefix
+	# tomeName should be given without the ".tome" suffix
 	# RETURNS an Epitome containing the given Tome's Path and details or None.
 	def GetTome(this, tomeName, download=True):
-		logging.debug(f"Fetching tome_{tomeName}.")
+		logging.debug(f"Fetching {tomeName}.tome.")
 
-		tomePath = this.tomeDirectory.joinpath(f"tome_{tomeName}")
+		tomePath = this.tomeDirectory.joinpath(f"{tomeName}.tome")
 		logging.debug(f"Will place {tomeName} in {tomePath}.")
 
 		epitome = this.catalog.query(Epitome).filter(Epitome.name==tomeName).first()
@@ -142,7 +142,7 @@ class EMI(eons.Executor):
 				this.repo['url'] = epitome.retrieved_from
 			this.repo['store'] = str(this.tomeDirectory)
 			logging.debug(f"Attempting to download {tomeName} from {this.repo['url']}")
-			this.DownloadPackage(packageName=f"tome_{tomeName}", registerClasses=False, createSubDirectory=True)
+			this.DownloadPackage(packageName=f"{tomeName}.tome", registerClasses=False, createSubDirectory=True)
 			if (tomePath.exists()):
 				epitome.path = tomePath
 				epitome.retrieved_from = this.repo['url']
@@ -153,7 +153,7 @@ class EMI(eons.Executor):
 					epitome.version = ""
 					# TODO: populate epitome.version. Blocked by https://github.com/infrastructure-tech/srv_infrastructure/issues/2
 			else:
-				logging.error(f"Failed to download tome_{tomeName}")
+				logging.error(f"Failed to download {tomeName}.tome")
 
 			this.repo['url'] = preservedUrl
 			this.repo['store'] = preservedRepo

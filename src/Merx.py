@@ -7,7 +7,7 @@ from .CatalogCards import *
 
 # Merx are actions: things like "install", "update", "remove", etc.
 # These should be stored on the online repo as merx_{merx.name}, e.g. merx_install, etc.
-class Merx(eons.Functor):
+class Merx(eons.StandardFunctor):
 	def __init__(this, name=eons.INVALID_NAME()):
 		super().__init__(name)
 
@@ -83,5 +83,5 @@ class Merx(eons.Functor):
 	# Open or download a Tome.
 	# tomeName should be given without the "tome_" prefix
 	# RETURNS an Epitome containing the given Tome's Path and details or None.
-	def GetTome(this, tomeName):
-		return this.executor.GetTome(tomeName)
+	def GetTome(this, tomeName, tomeType="tome"):
+		return this.executor.GetTome(tomeName, tomeType=tomeType)

@@ -118,10 +118,10 @@ class EMI(eons.Executor):
 	# GetRegistered modified for use with Tomes.
 	# tomeName should be given without the ".tome" suffix
 	# RETURNS an Epitome containing the given Tome's Path and details or None.
-	def GetTome(this, tomeName, download=True):
-		logging.debug(f"Fetching {tomeName}.tome.")
+	def GetTome(this, tomeName, tomeType="tome", download=True):
+		logging.debug(f"Fetching {tomeName}.{tomeType}.")
 
-		tomePath = this.tomeDirectory.joinpath(f"{tomeName}.tome")
+		tomePath = this.tomeDirectory.joinpath(f"{tomeName}.{tomeType}")
 		logging.debug(f"Will place {tomeName} in {tomePath}.")
 
 		epitome = this.catalog.query(Epitome).filter(Epitome.name==tomeName).first()
@@ -142,7 +142,7 @@ class EMI(eons.Executor):
 				this.repo['url'] = epitome.retrieved_from
 			this.repo['store'] = str(this.tomeDirectory)
 			logging.debug(f"Attempting to download {tomeName} from {this.repo['url']}")
-			this.DownloadPackage(packageName=f"{tomeName}.tome", registerClasses=False, createSubDirectory=True)
+			this.DownloadPackage(packageName=f"{tomeName}.{tomeType}", registerClasses=False, createSubDirectory=True)
 			if (tomePath.exists()):
 				epitome.path = tomePath
 				epitome.retrieved_from = this.repo['url']
@@ -153,7 +153,7 @@ class EMI(eons.Executor):
 					epitome.version = ""
 					# TODO: populate epitome.version. Blocked by https://github.com/infrastructure-tech/srv_infrastructure/issues/2
 			else:
-				logging.error(f"Failed to download {tomeName}.tome")
+				logging.error(f"Failed to download {tomeName}.{tomeType}")
 
 			this.repo['url'] = preservedUrl
 			this.repo['store'] = preservedRepo

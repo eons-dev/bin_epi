@@ -27,7 +27,7 @@ class EMI(EBBS):
 		this.catalog = orm.sessionmaker(bind=this.sqlEngine)() # sqlalchemy: sessionmaker()->Session()->session.
 		this.SetupHome()
 
-		super().__init__(name="Eons Modular Interface", descriptionStr="A universal state manager.")
+		eons.Executor.__init__(name="Eons Modular Interface", descriptionStr="A universal state manager.")
 
 		# Windows paths must be set in the config.json.
 		this.paths = [

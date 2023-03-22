@@ -27,7 +27,7 @@ class EMI(EBBS):
 		this.catalog = orm.sessionmaker(bind=this.sqlEngine)() # sqlalchemy: sessionmaker()->Session()->session.
 		this.SetupHome()
 
-		eons.Executor().__init__(name="Eons Modular Interface", descriptionStr="A universal state manager.")
+		super().__init__(name="Eons Modular Interface", descriptionStr="A universal state manager.")
 
 		# Windows paths must be set in the config.json.
 		this.paths = [
@@ -75,19 +75,19 @@ class EMI(EBBS):
 
 	# Override of eons.Executor method. See that class for details
 	def AddArgs(this):
-		eons.Executor().AddArgs()
+		eons.Executor.AddArgs(this)
 		this.argparser.add_argument('merx', type=str, metavar='merx', help='what to do (e.g. \'install\' or \'remove\')')
 		this.argparser.add_argument('tomes', type=str, nargs='*', metavar='tome', help='how to do it (e.g. \'my_package\')')
 
 	# Override of eons.Executor method. See that class for details
 	def ParseArgs(this):
-		eons.Executor().ParseArgs()
+		eons.Executor.ParseArgs(this)
 		# NOTE: THERE SHOULD BE NO this.extraArgs
 
 	# Override of eons.Executor method. See that class for details
 	def Function(this):
 
-		eons.Executor().Function()
+		eons.Executor.Function(this)
 		
 		# paths will be provided to each Merx as a dictionary.
 		this.SelectPaths()

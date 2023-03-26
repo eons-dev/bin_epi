@@ -1,4 +1,20 @@
 next:
+- build: py_package
+  build_in: pkg
+  config:
+    clear_build_path: false
+    author_name: eons
+    author_email: support@eons.llc
+    description: Eons Modular Installer
+    package_url: https://github.com/eons-dev/bin_emi
+    license: MIT License
+    python_min: '3.7'
+    classifiers:
+    - 'Development Status :: 3 - Alpha'
+    next:
+    - build: py_install
+      build_in: "../"
+      config: {}
 - build: test
   build_in: "test"
   config:

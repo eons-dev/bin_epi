@@ -1,0 +1,18 @@
+next:
+- build: test_case
+  config:
+    assertions:
+    - kind: command
+      check: output
+      command: emi install hollow; cat ~/.eons/lib/PRICKLY_PEAR
+      expected: [
+        'lib',
+        ''
+      ]
+      comparator: eq
+    - kind: command
+      check: output
+      command: emi remove hollow; ls ~/.eons/lib/
+      expected:
+      - ''
+      comparator: eq

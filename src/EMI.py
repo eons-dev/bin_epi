@@ -5,6 +5,7 @@ import sqlalchemy as sql
 import sqlalchemy.orm as orm
 from pathlib import Path
 from eot import EOT
+from ebbs import EBBS
 from .Exceptions import *
 from .CatalogCards import *
 
@@ -14,7 +15,7 @@ class PathSelector:
 		this.systemPath = systemPath
 		this.selectedPath = None
 
-class EMI(eons.Executor):
+class EMI(EBBS):
 
 	def __init__(this):
 
@@ -74,19 +75,19 @@ class EMI(eons.Executor):
 
 	# Override of eons.Executor method. See that class for details
 	def AddArgs(this):
-		super().AddArgs()
+		eons.Executor.AddArgs(this)
 		this.argparser.add_argument('merx', type=str, metavar='merx', help='what to do (e.g. \'install\' or \'remove\')')
 		this.argparser.add_argument('tomes', type=str, nargs='*', metavar='tome', help='how to do it (e.g. \'my_package\')')
 
 	# Override of eons.Executor method. See that class for details
 	def ParseArgs(this):
-		super().ParseArgs()
+		eons.Executor.ParseArgs(this)
 		# NOTE: THERE SHOULD BE NO this.extraArgs
 
 	# Override of eons.Executor method. See that class for details
 	def Function(this):
 
-		super().Function()
+		eons.Executor.Function(this)
 		
 		# paths will be provided to each Merx as a dictionary.
 		this.SelectPaths()

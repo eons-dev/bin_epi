@@ -1,0 +1,6 @@
+next:
+- build: test
+  build_in: "test"
+  config:
+    test_path: "integration"
+    test_fixture: integration.yaml

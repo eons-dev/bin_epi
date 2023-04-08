@@ -5,6 +5,11 @@ from pathlib import Path
 import eons
 from .CatalogCards import *
 
+emi install hollow
+emi --undo install hollow == emi remove hollow
+
+emi deploy apie
+
 # Merx are actions: things like "install", "update", "remove", etc.
 # These should be stored on the online repo as merx_{merx.name}, e.g. merx_install, etc.
 class Merx(eons.StandardFunctor):
@@ -12,13 +17,15 @@ class Merx(eons.StandardFunctor):
 		super().__init__(name)
 
 		this.requiredKWArgs = [
+			"builder", # which builder to use for given tomes (must be builder name not builder object)
 			"tomes", # emi cli arguments 2 and beyond
 			"paths", # where to put things, as determined by EMI
 		]
 		# executor and catalog are treated specially; see ValidateArgs(), below, for details.
 
 		# For optional args, supply the arg name as well as a default value.
-		this.optionalKWArgs = {}
+		this.optionalKWArgs["undo"] = False
+		this.optionalKWArgs["package_type"] = "build"
 
 		this.transactionSucceeded = False
 
@@ -26,42 +33,14 @@ class Merx(eons.StandardFunctor):
 	# Do stuff!
 	# Override this or die.
 	def Transaction(this):
-		pass
+		return
 
 
 	# Undo any changes made by Transaction.
 	# Please override this too!
 	def Rollback(this):
+		super().Rollback()
 		this.catalog.rollback() # removes all records created by *this (see: https://docs.sqlalchemy.org/en/14/orm/tutorial.html# rolling-back).
-
-
-	# RETURN whether or not the Transaction was successful.
-	# While you can override this, it is preferred that you simply set this.transactionSucceeded throughout Transaction().
-	def DidTransactionSucceed(this):
-		return this.transactionSucceeded
-
-
-	# API compatibility shim with eons.Functor method.
-	def DidFunctionSucceed(this):
-		this.functionSucceeded = this.transactionSucceeded
-		return this.DidTransactionSucceed()
-
-
-	# RETURN whether or not the Rollback was successful.
-	# While you can override this, it is preferred that you simply set this.rollbackSucceeded
-	# Override of eons.Functor method.
-	def DidRollbackSucceed(this):
-		 return this.rollbackSucceeded
-
-
-	# Hook for any pre-transaction configuration
-	def PreTransaction(this):
-		pass
-
-
-	# Hook for any post-transaction configuration
-	def PostTransaction(this):
-		pass
 
 
 	# Grab any known and necessary args from kwargs before any Fetch calls are made.
@@ -75,9 +54,21 @@ class Merx(eons.StandardFunctor):
 	def Function(this):
 		logging.info(f"Initiating Transaction {this.name} for {this.tomes}")
 
-		this.PreTransaction()
-		this.Transaction()
-		this.PostTransaction()
+		cachedFunctors = this.executor.cachedFunctors
+		logging.debug(f"Executing {this.builder}({', '.join([str(a) for a in args] + [k+'='+str(v) for k,v in kwargs.items()])})")
+		if (this.builder in cachedFunctors):
+			functor = cachedFunctors[this.builder]
+		else:
+			functor = this.executor.GetRegistered(this.builder, this.package_type)
+			this.executor.cachedFunctors.update({this.builder: functor})
+
+		if (this.undo):
+			for tome in this.tomes:
+				functor.WarmUp(path = this.executor.library.joinpath("tmp"), build_in = "build", events = this.executor, tome = tome, *args, **kwargs, executor=this.executor)
+				functor.Rollback()
+		else:
+			for tome in this.tomes:
+				functor(path = this.executor.library.joinpath("tmp"), build_in = "build", events = this.executor, tome = tome, *args, **kwargs, executor=this.executor)
 
 
 	# Open or download a Tome.

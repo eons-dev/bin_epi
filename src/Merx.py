@@ -5,10 +5,6 @@ from pathlib import Path
 import eons
 from .CatalogCards import *
 
-emi install hollow
-emi --undo install hollow == emi remove hollow
-
-emi deploy apie
 
 # Merx are actions: things like "install", "update", "remove", etc.
 # These should be stored on the online repo as merx_{merx.name}, e.g. merx_install, etc.

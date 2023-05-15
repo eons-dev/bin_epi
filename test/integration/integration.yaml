@@ -12,7 +12,7 @@ next:
       comparator: eq
     - kind: command
       check: output
-      command: emi remove hollow; ls ~/.eons/lib/
+      command: emi --undo install hollow; ls ~/.eons/lib/
       expected:
       - ''
       comparator: eq

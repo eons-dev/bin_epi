@@ -1,3 +1,5 @@
+name: emi
+type: exe
 next:
 - build: py_package
   build_in: pkg

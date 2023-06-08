@@ -97,12 +97,12 @@ class Merx(eons.StandardFunctor):
 			kwargs.update(argMapping)
 
 			epitomeUpdate = epitomeMapping
-
+			result = None
 			if (this.undo):
 				logging.info(f"Rolling back {functor.name} {tome}")
 				functor.callMethod = 'Rollback'
 				functor.rollbackMethod = 'Function'
-				epitomeUpdate.update(dict(functor(**kwargs)))
+				result = functor(**kwargs)
 				if (not functor.DidRollbackSucceed()):
 					this.functionSucceeded = False
 					break
@@ -110,10 +110,13 @@ class Merx(eons.StandardFunctor):
 				logging.info(f"Calling {functor.name} {tome}")
 				functor.callMethod = 'Function'
 				functor.rollbackMethod = 'Rollback'
-				epitomeUpdate.update(dict(functor(**kwargs)))
+				result = functor(**kwargs)
 				if (not functor.DidFunctionSucceed()):
 					this.functionSucceeded = False
 					break
+
+			if (isinstance(result, dict)):
+				epitomeUpdate.update(result)
 
 			for key, value in epitomeUpdate.items():
 				setattr(epitome, key, value)

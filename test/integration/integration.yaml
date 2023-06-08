@@ -4,15 +4,14 @@ next:
     assertions:
     - kind: command
       check: output
-      command: emi install hollow; cat ~/.eons/lib/PRICKLY_PEAR
+      command: emi install hollow --verbosity 0; cat ~/.eons/lib/PRICKLY_PEAR
       expected: [
-        'lib',
-        ''
+        'lib'
       ]
       comparator: eq
     - kind: command
       check: output
-      command: emi remove hollow; ls ~/.eons/lib/
+      command: emi install hollow --undo --verbosity 0; ls ~/.eons/lib/
       expected:
       - ''
       comparator: eq

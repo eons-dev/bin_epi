@@ -8,6 +8,7 @@ from eot import EOT
 from ebbs import EBBS
 from .Exceptions import *
 from .CatalogCards import *
+from .Merx import Merx
 
 class PathSelector:
 	def __init__(this, name, systemPath):
@@ -76,14 +77,19 @@ class EMI(EBBS):
 	# Override of eons.Executor method. See that class for details
 	def AddArgs(this):
 		eons.Executor.AddArgs(this)
+		this.argparser.add_argument('-e','--event', type = str, action='append', nargs='*', metavar = 'release', help = 'what is going on that triggered this build?', dest = 'events')
+		this.argparser.add_argument('-u','--undo', action='store_true', help = 'whether merx moves forward or backwards with action/builder', dest = 'undo')
 		this.argparser.add_argument('merx', type=str, metavar='merx', help='what to do (e.g. \'install\' or \'remove\')')
 		this.argparser.add_argument('tomes', type=str, nargs='*', metavar='tome', help='how to do it (e.g. \'my_package\')')
+		
 
 	# Override of eons.Executor method. See that class for details
 	def ParseArgs(this):
 		eons.Executor.ParseArgs(this)
-		# NOTE: THERE SHOULD BE NO this.extraArgs
-
+		this.events = set()
+		if (this.parsedArgs.events is not None):
+			[[this.events.add(str(e)) for e in l] for l in this.parsedArgs.events]
+			
 	# Override of eons.Executor method. See that class for details
 	def Function(this):
 
@@ -93,9 +99,10 @@ class EMI(EBBS):
 		this.SelectPaths()
 		merxList = this.parsedArgs.merx.split('/')
 		
-		this.Execute(merxList.pop(0), next=merxList)
+		this.Execute(merxList.pop(0), next=merxList, undo = this.parsedArgs.undo)
 
 	def SelectPaths(this):
+		
 		for path in this.paths:
 			preferredPath = Path(this.Fetch(f"{path.name}_path", default=path.systemPath))
 			if (preferredPath.exists() and os.access(str(preferredPath), os.W_OK | os.X_OK)):
@@ -107,9 +114,11 @@ class EMI(EBBS):
 			this.selectedPaths[path.name] = path.selectedPath
 			logging.debug(f"Path for {path.name} set to {str(path.selectedPath)}.")
 			
-	def Execute(this, merx, *args, **kwargs):
-		transaction = TransactionLog(merx, '; '.join(this.parsedArgs.tomes))
-		transaction.result = super().Execute(merx, *args, tomes=this.parsedArgs.tomes, paths=this.selectedPaths, catalog=this.catalog, **kwargs)
+	def Execute(this, builder, *args, **kwargs):
+
+		transaction = TransactionLog(builder, '; '.join(this.parsedArgs.tomes))
+		merx = Merx(builder)
+		transaction.result = merx(*args, executor = this, builder = builder, tomes=this.parsedArgs.tomes, paths=this.selectedPaths, catalog=this.catalog, **kwargs)
 		this.catalog.add(transaction)
 		
 		# make sure the transaction log gets committed.

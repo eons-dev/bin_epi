@@ -5,6 +5,7 @@ from pathlib import Path
 import eons
 from .CatalogCards import *
 
+
 # Merx are actions: things like "install", "update", "remove", etc.
 # These should be stored on the online repo as merx_{merx.name}, e.g. merx_install, etc.
 class Merx(eons.StandardFunctor):
@@ -12,56 +13,26 @@ class Merx(eons.StandardFunctor):
 		super().__init__(name)
 
 		this.requiredKWArgs = [
+			"builder", # which builder to use for given tomes (must be builder name not builder object)
 			"tomes", # emi cli arguments 2 and beyond
 			"paths", # where to put things, as determined by EMI
 		]
 		# executor and catalog are treated specially; see ValidateArgs(), below, for details.
 
 		# For optional args, supply the arg name as well as a default value.
-		this.optionalKWArgs = {}
+		this.optionalKWArgs["undo"] = False
+		this.optionalKWArgs["package_type"] = "build"
 
-		this.transactionSucceeded = False
+		this.enableRollback = False
 
-
-	# Do stuff!
-	# Override this or die.
-	def Transaction(this):
-		pass
+		this.result = {}
 
 
 	# Undo any changes made by Transaction.
 	# Please override this too!
 	def Rollback(this):
+		super().Rollback()
 		this.catalog.rollback() # removes all records created by *this (see: https://docs.sqlalchemy.org/en/14/orm/tutorial.html# rolling-back).
-
-
-	# RETURN whether or not the Transaction was successful.
-	# While you can override this, it is preferred that you simply set this.transactionSucceeded throughout Transaction().
-	def DidTransactionSucceed(this):
-		return this.transactionSucceeded
-
-
-	# API compatibility shim with eons.Functor method.
-	def DidFunctionSucceed(this):
-		this.functionSucceeded = this.transactionSucceeded
-		return this.DidTransactionSucceed()
-
-
-	# RETURN whether or not the Rollback was successful.
-	# While you can override this, it is preferred that you simply set this.rollbackSucceeded
-	# Override of eons.Functor method.
-	def DidRollbackSucceed(this):
-		 return this.rollbackSucceeded
-
-
-	# Hook for any pre-transaction configuration
-	def PreTransaction(this):
-		pass
-
-
-	# Hook for any post-transaction configuration
-	def PostTransaction(this):
-		pass
 
 
 	# Grab any known and necessary args from kwargs before any Fetch calls are made.
@@ -75,9 +46,79 @@ class Merx(eons.StandardFunctor):
 	def Function(this):
 		logging.info(f"Initiating Transaction {this.name} for {this.tomes}")
 
-		this.PreTransaction()
-		this.Transaction()
-		this.PostTransaction()
+		cachedFunctors = this.executor.cachedFunctors
+		logging.debug(f"Executing {this.builder}({', '.join([str(a) for a in this.args] + [k+'='+str(v) for k,v in this.kwargs.items()])})")
+		if (this.builder in cachedFunctors):
+			functor = cachedFunctors[this.builder]
+		else:
+			functor = this.executor.GetRegistered(this.builder, this.package_type)
+			this.executor.cachedFunctors.update({this.builder: functor})
+
+		this.functionSucceeded = True
+
+		for tome in this.tomes:
+			epitome = this.GetTome(tome)
+			if (epitome.path is None):
+					logging.error(f"Could not find files for {tome}.")
+					continue
+			if(this.undo):
+				if (epitome.installed_at is None or not len(epitome.installed_at) or epitome.installed_at == "NOT INSTALLED"):
+					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
+					continue				
+			else:
+				if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
+					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
+					continue
+
+			epitomeMapping = {
+				"id" : epitome.id,
+				"name": epitome.name,
+				"version": epitome.version,
+				"project_path": epitome.path,
+				"installed_at": epitome.installed_at,
+				"retrieved_from": epitome.retrieved_from,
+				"first_retrieved_on": epitome.first_retrieved_on,
+				"last_retrieved_on": epitome.last_retrieved_on,
+				"additional_notes": epitome.additional_notes
+			}
+
+			argMapping = {
+				"paths": this.paths,
+				"path": this.executor.library.joinpath("tmp"),
+				"build_in": "build",
+				"events": this.executor.events,
+				"executor": this.executor
+			}
+
+			kwargs = this.kwargs
+			if (not kwargs):
+				kwargs = {}
+			kwargs.update(epitomeMapping)
+			kwargs.update(argMapping)
+
+			epitomeUpdate = epitomeMapping
+
+			if (this.undo):
+				logging.info(f"Rolling back {functor.name} {tome}")
+				functor.callMethod = 'Rollback'
+				functor.rollbackMethod = 'Function'
+				epitomeUpdate.update(dict(functor(**kwargs)))
+				if (not functor.DidRollbackSucceed()):
+					this.functionSucceeded = False
+					break
+			else:
+				logging.info(f"Calling {functor.name} {tome}")
+				functor.callMethod = 'Function'
+				functor.rollbackMethod = 'Rollback'
+				epitomeUpdate.update(dict(functor(**kwargs)))
+				if (not functor.DidFunctionSucceed()):
+					this.functionSucceeded = False
+					break
+
+			for key, value in epitomeUpdate.items():
+				setattr(epitome, key, value)
+					
+			this.catalog.add(epitome)
 
 
 	# Open or download a Tome.

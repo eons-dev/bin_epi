@@ -77,10 +77,11 @@ class EMI(EBBS):
 	# Override of eons.Executor method. See that class for details
 	def AddArgs(this):
 		eons.Executor.AddArgs(this)
+		this.argparser.add_argument('-e','--event', type = str, action='append', nargs='*', metavar = 'release', help = 'what is going on that triggered this build?', dest = 'events')
+		this.argparser.add_argument('-u','--undo', action='store_true', help = 'whether merx moves forward or backwards with action/builder', dest = 'undo')
 		this.argparser.add_argument('merx', type=str, metavar='merx', help='what to do (e.g. \'install\' or \'remove\')')
 		this.argparser.add_argument('tomes', type=str, nargs='*', metavar='tome', help='how to do it (e.g. \'my_package\')')
-		this.argparser.add_argument('-e','--event', type = str, action='append', nargs='*', metavar = 'release', help = 'what is going on that triggered this build?', dest = 'events')
-		this.argparser.add_argument('-u','--undo', type = bool, metavar = 'undo', help = 'whether merx moves forward or backwards with action/builder', dest = 'undo')
+		
 
 	# Override of eons.Executor method. See that class for details
 	def ParseArgs(this):

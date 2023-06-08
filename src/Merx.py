@@ -23,7 +23,6 @@ class Merx(eons.StandardFunctor):
 		this.optionalKWArgs["undo"] = False
 		this.optionalKWArgs["package_type"] = "build"
 
-		this.functionSucceeded = False
 		this.enableRollback = False
 
 		this.result = {}
@@ -55,16 +54,21 @@ class Merx(eons.StandardFunctor):
 			functor = this.executor.GetRegistered(this.builder, this.package_type)
 			this.executor.cachedFunctors.update({this.builder: functor})
 
+		this.functionSucceeded = True
+
 		for tome in this.tomes:
 			epitome = this.GetTome(tome)
-
-			if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
-				logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
-				continue
-			
 			if (epitome.path is None):
-				logging.error(f"Could not find files for {tome}.")
-				continue
+					logging.error(f"Could not find files for {tome}.")
+					continue
+			if(this.undo):
+				if (epitome.installed_at is None or not len(epitome.installed_at) or epitome.installed_at == "NOT INSTALLED"):
+					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
+					continue				
+			else:
+				if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
+					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
+					continue
 
 			epitomeMapping = {
 				"id" : epitome.id,
@@ -86,27 +90,35 @@ class Merx(eons.StandardFunctor):
 				"executor": this.executor
 			}
 
-			kwargs = kwargs.update(epitomeMapping)
-			kwargs = kwargs.update(argMapping)
-
-			functor.WarmUp(*args, **kwargs)
+			kwargs = this.kwargs
+			if (not kwargs):
+				kwargs = {}
+			kwargs.update(epitomeMapping)
+			kwargs.update(argMapping)
 
 			epitomeUpdate = epitomeMapping
 
 			if (this.undo):
-				epitomeUpdate.update(dict(functor.Rollback()))
+				logging.info(f"Rolling back {functor.name} {tome}")
+				functor.callMethod = 'Rollback'
+				functor.rollbackMethod = 'Function'
+				epitomeUpdate.update(dict(functor(**kwargs)))
+				if (not functor.DidRollbackSucceed()):
+					this.functionSucceeded = False
+					break
 			else:
-				epitomeUpdate.update(dict(functor.Function()))
+				logging.info(f"Calling {functor.name} {tome}")
+				functor.callMethod = 'Function'
+				functor.rollbackMethod = 'Rollback'
+				epitomeUpdate.update(dict(functor(**kwargs)))
+				if (not functor.DidFunctionSucceed()):
+					this.functionSucceeded = False
+					break
 
-			if (not functor.functionSucceeded):
-				this.functionSucceeded = False
-				break
-		
-			if (this.functionSucceeded):
-				for key, value in epitomeUpdate.items():
-					setattr(epitome, key, value)
+			for key, value in epitomeUpdate.items():
+				setattr(epitome, key, value)
 					
-				this.catalog.add(epitomeUpdate)
+			this.catalog.add(epitome)
 
 
 	# Open or download a Tome.

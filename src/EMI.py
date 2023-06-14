@@ -92,17 +92,15 @@ class EMI(EBBS):
 			
 	# Override of eons.Executor method. See that class for details
 	def Function(this):
-
 		eons.Executor.Function(this)
 		
-		# paths will be provided to each Merx as a dictionary.
+		# paths will be provided to each Merx as a dictionary.emi 
 		this.SelectPaths()
 		merxList = this.parsedArgs.merx.split('/')
 		
 		this.Execute(merxList.pop(0), next=merxList, undo = this.parsedArgs.undo)
 
 	def SelectPaths(this):
-		
 		for path in this.paths:
 			preferredPath = Path(this.Fetch(f"{path.name}_path", default=path.systemPath))
 			if (preferredPath.exists() and os.access(str(preferredPath), os.W_OK | os.X_OK)):
@@ -115,7 +113,6 @@ class EMI(EBBS):
 			logging.debug(f"Path for {path.name} set to {str(path.selectedPath)}.")
 			
 	def Execute(this, builder, *args, **kwargs):
-
 		transaction = TransactionLog(builder, '; '.join(this.parsedArgs.tomes))
 		merx = Merx(builder)
 		transaction.result = merx(*args, executor = this, builder = builder, tomes=this.parsedArgs.tomes, paths=this.selectedPaths, catalog=this.catalog, **kwargs)

@@ -68,26 +68,18 @@ class Merx(eons.StandardFunctor):
 			if (epitome.path is None):
 					logging.error(f"Could not find files for {tome}.")
 					continue
-			if(this.undo):
-				if (epitome.installed_at is None or not len(epitome.installed_at) or epitome.installed_at == "NOT INSTALLED"):
-					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
-					continue				
-			else:
-				if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
-					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
-					continue
-
 			if (this.undo):
 				if (epitome.installed_at is None or len(epitome.installed_at)==0 or epitome.installed_at == "NOT INSTALLED"):
 					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
 					continue
+				logging.info(f"Rolling back {functor.name} {tome}")
 				functor.callMethod = "Rollback"
 				functor.rollbackMethod = "Function"
-				
 			else:
 				if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
 					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
 					continue
+				logging.info(f"Calling {functor.name} {tome}")
 				functor.callMethod ="Function"
 				functor.rollbackMethod = "Rollback"
 			
@@ -119,22 +111,10 @@ class Merx(eons.StandardFunctor):
 
 			epitomeUpdate = epitomeMapping
 			result = None
-			if (this.undo):
-				logging.info(f"Rolling back {functor.name} {tome}")
-				functor.callMethod = 'Rollback'
-				functor.rollbackMethod = 'Function'
-				result = functor(**kwargs)
-				if (not functor.DidRollbackSucceed()):
-					this.functionSucceeded = False
-					break
-			else:
-				logging.info(f"Calling {functor.name} {tome}")
-				functor.callMethod = 'Function'
-				functor.rollbackMethod = 'Rollback'
-				result = functor(**kwargs)
-				if (not functor.DidFunctionSucceed()):
-					this.functionSucceeded = False
-					break
+			result = functor(**kwargs)
+			if (functor.result != 0):
+				this.functionSucceeded = False
+				break
 
 			if (isinstance(result, dict)):
 				epitomeUpdate.update(result)
@@ -143,10 +123,6 @@ class Merx(eons.StandardFunctor):
 				setattr(epitome, key, value)
 					
 			this.catalog.add(epitome)
-
-			if (functor.result > 2):
-				this.functionSucceeded = False
-				break
 		
 			if (this.functionSucceeded):
 				for key, value in epitomeUpdate.items():

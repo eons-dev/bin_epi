@@ -2,6 +2,8 @@
 build/**/
 !/build/config/
 
-#IDE
+
+#IDEs
 /.idea/
+/.vscode/
 *.code-workspace

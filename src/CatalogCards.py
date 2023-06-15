@@ -22,6 +22,7 @@ class Epitome(SQLBase):
 	name = sql.Column(sql.String)
 	version = sql.Column(sql.String) # not all versions follow Semantic Versioning.
 	installed_at = sql.Column(sql.String) # semicolon-separated list of file paths.
+	fetch_results = sql.Column(sql.String) # array of stored fetch callbacks
 	retrieved_from = sql.Column(sql.String) # repo url
 	first_retrieved_on = sql.Column(sql.Float) # startdate (per eot).
 	last_retrieved_on = sql.Column(sql.Float) # startdate (per eot).

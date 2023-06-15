@@ -11,7 +11,7 @@ next:
       comparator: eq
     - kind: command
       check: output
-      command: emi install hollow --undo --verbosity 0; ls ~/.eons/lib/
+      command: emi --undo install hollow --verbosity 0; ls ~/.eons/lib/
       expected:
       - ''
       comparator: eq

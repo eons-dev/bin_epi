@@ -6,6 +6,7 @@ import shutil
 import jsonpickle
 import sqlalchemy as sql
 import sqlalchemy.orm as orm
+from sqlalchemy import ForeignKey
 from pathlib import Path
 from eot import EOT
 from .Exceptions import *
@@ -21,7 +22,7 @@ class Epitome(SQLBase):
 	id = sql.Column(sql.Integer, primary_key=True)
 	name = sql.Column(sql.String)
 	version = sql.Column(sql.String) # not all versions follow Semantic Versioning.
-	installed_at = sql.Column(sql.String) # semicolon-separated list of file paths.
+	space = sql.Column(sql.String) # JSON string describing installation location details
 	fetch_results = sql.Column(sql.String) # array of stored fetch callbacks
 	retrieved_from = sql.Column(sql.String) # repo url
 	first_retrieved_on = sql.Column(sql.Float) # startdate (per eot).
@@ -31,7 +32,7 @@ class Epitome(SQLBase):
 	path = None
 
 	def __repr__(this):
-		return f"<Epitome(id={this.id}, name={this.name}, version={this.version}, installed_at={this.installed_at}, retrieved_from={this.retrieved_from}, retrieved_on={this.retrieved_on}, additional_notes={this.additional_notes})>"
+		return f"<Epitome(id={this.id}, name={this.name}, version={this.version}, space={this.space}, retrieved_from={this.retrieved_from}, retrieved_on={this.retrieved_on}, additional_notes={this.additional_notes})>"
 
 	def __init__(this, name=None):
 		this.name = name
@@ -50,6 +51,7 @@ class TransactionLog(SQLBase):
 		this.when = EOT.GetStardate()
 		this.merx = merx
 		this.tomes = tomes
+
 
 # This is here just to ensure all SQLBase children are created before *this is called.
 # TODO: Can we move this into EMI?

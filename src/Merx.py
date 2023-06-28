@@ -1,6 +1,7 @@
 import os
 import logging
 import shutil
+import jsonpickle
 from pathlib import Path
 import eons
 from .CatalogCards import *
@@ -68,27 +69,13 @@ class Merx(eons.StandardFunctor):
 			if (epitome.path is None):
 					logging.error(f"Could not find files for {tome}.")
 					continue
-			if (this.undo):
-				if (epitome.installed_at is None or len(epitome.installed_at)==0 or epitome.installed_at == "NOT INSTALLED"):
-					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
-					continue
-				logging.info(f"Rolling back {functor.name} {tome}")
-				functor.callMethod = "Rollback"
-				functor.rollbackMethod = "Function"
-			else:
-				if (epitome.installed_at is not None and len(epitome.installed_at) and epitome.installed_at != "NOT INSTALLED"):
-					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
-					continue
-				logging.info(f"Calling {functor.name} {tome}")
-				functor.callMethod ="Function"
-				functor.rollbackMethod = "Rollback"
 			
 			epitomeMapping = {
 				"id" : epitome.id,
 				"name": epitome.name,
 				"version": epitome.version,
 				"project_path": epitome.path,
-				"installed_at": epitome.installed_at,
+				"space": epitome.space,
 				"retrieved_from": epitome.retrieved_from,
 				"first_retrieved_on": epitome.first_retrieved_on,
 				"last_retrieved_on": epitome.last_retrieved_on,
@@ -109,28 +96,39 @@ class Merx(eons.StandardFunctor):
 			kwargs.update(epitomeMapping)
 			kwargs.update(argMapping)
 
+			functor.WarmUp(**kwargs)
+			functor.result.data = jsonpickle.decode(epitome.space)
+
+			if (this.undo):
+				if (not functor.DidFunctionSucceed()):
+					logging.debug(f"Skipping rollback for {tome}; it does not appear to be installed.")
+					continue
+				logging.info(f"Rolling back {functor.name} {tome}")
+				functor.callMethod = "Rollback"
+				functor.rollbackMethod = "Function"
+			else:
+				if (functor.DidFunctionSucceed()):
+					logging.debug(f"Skipping installation for {tome}; it appears to be installed.")
+					continue
+				logging.info(f"Calling {functor.name} {tome}")
+				functor.callMethod ="Function"
+				functor.rollbackMethod = "Rollback"
+
 			epitomeUpdate = epitomeMapping
-			result = None
-			result = functor(**kwargs)
-			if (functor.result != 0):
+			functor.result.data = eons.util.DotDict()
+			functor(**kwargs)
+			epitomeUpdate.space = jsonpickle.encode(functor.result.data)
+
+			if (functor.result.code != 0):
 				this.functionSucceeded = False
 				break
-
-			if (isinstance(result, dict)):
-				epitomeUpdate.update(result)
-
+		
 			for key, value in epitomeUpdate.items():
 				setattr(epitome, key, value)
-					
+				
+			epitome.fetch_results = this.fetchCallback.GetFetchResultsAsJson()
+			this.fetchCallback.Clear()
 			this.catalog.add(epitome)
-		
-			if (this.functionSucceeded):
-				for key, value in epitomeUpdate.items():
-					setattr(epitome, key, value)
-					
-				epitome.fetch_results = this.fetchCallback.GetFetchResultsAsJson()
-				this.fetchCallback.Clear()
-				this.catalog.add(epitome)
 
 
 	# Open or download a Tome.

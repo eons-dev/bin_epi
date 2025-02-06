@@ -8,11 +8,11 @@ next:
   build: proxy
   build_in: local
   copy:
-  - "../../src/": local/src/
-  - "../../inc/": local/inc/
-  - "../../test/": local/test/
-  - "../../README.md": local/README.md
-  - "../../LICENSE": local/LICENSE
+  - "/src/": local/src/
+  - "/inc/": local/inc/
+  - "/test/": local/test/
+  - "/README.md": local/README.md
+  - "/LICENSE": local/LICENSE
   config:
     clear_build_path: false
     proxy: "../config/local.yaml"
